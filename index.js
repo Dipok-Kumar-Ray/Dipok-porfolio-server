@@ -6,15 +6,24 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// ✅ CORS কনফিগ (Localhost + Live frontend allow করা)
+app.use(cors({
+  origin: [
+    'http://localhost:5173', // local dev
+    // 'https://your-frontend-live-link.vercel.app' // deploy frontend link
+  ],
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
 
 // Nodemailer transporter সেটআপ
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS,  
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -33,21 +42,18 @@ app.post('/send-email', async (req, res) => {
 
   const mailOptions = {
     from: `"Website Contact" <${process.env.EMAIL_USER}>`,
-    to: process.env.EMAIL_USER,  // এখানে নিজের মেইল অথবা যেখানেই পেতে চাও সেটি
-    subject: `New message from ${name},
-    text: You have received a new message:\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`,
+    to: process.env.EMAIL_USER,
+    subject: `New message from ${name}`,
+    text: `You have received a new message:\n\nName: ${name}\nEmail: ${email}\nMessage: ${message}`
   };
 
-  
-
   try {
-  await transporter.sendMail(mailOptions);
-  res.status(200).json({ message: 'Email sent successfully!' });
-} catch (error) {
-  console.error('Error sending email:', error);  // <== এই লাইনটি এখানে থাকতে হবে
-  res.status(500).json({ error: 'Failed to send email.' });
-}
-
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Email sent successfully!' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ error: 'Failed to send email.' });
+  }
 });
 
 app.listen(PORT, () => {
